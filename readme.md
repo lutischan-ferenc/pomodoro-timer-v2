@@ -62,6 +62,7 @@ A simple, lightweight Pomodoro timer application that runs in the system tray. B
 
 ### Settings
 Access: Select "Settings" from the right-click menu.
+
   ![Pomodoro settings](images/settings.png "Pomodoro settings")
 
 ### Configuration:
