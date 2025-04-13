@@ -1,0 +1,51 @@
+#include <windows.h>
+
+// Dialog IDs
+#define IDD_SETTINGS 100
+#define IDD_ABOUT 101
+#define IDC_POMODORO 101
+#define IDC_SHORT_BREAK 102
+#define IDC_LONG_BREAK 103
+#define IDC_OK 104
+#define IDC_CANCEL 105
+#define IDC_CLOCK_SOUND 106
+#define IDC_AUTOSTART 107
+#define IDC_WEBSITE 108
+
+// Sound resources
+TICK_WAV WAV "tick.wav"
+TOCK_WAV WAV "tock.wav"
+DING_WAV WAV "ding.wav"
+
+// Settings Dialog
+IDD_SETTINGS DIALOGEX 0, 0, 200, 140
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Pomodoro Settings"
+FONT 8, "MS Shell Dlg"
+BEGIN
+    LTEXT           "Pomodoro (minutes):", -1, 10, 10, 80, 10
+    EDITTEXT        IDC_POMODORO, 90, 10, 40, 14, ES_NUMBER
+    LTEXT           "Short Break (minutes):", -1, 10, 30, 80, 10
+    EDITTEXT        IDC_SHORT_BREAK, 90, 30, 40, 14, ES_NUMBER
+    LTEXT           "Long Break (minutes):", -1, 10, 50, 80, 10
+    EDITTEXT        IDC_LONG_BREAK, 90, 50, 40, 14, ES_NUMBER
+    AUTOCHECKBOX    "Enable clock sound", IDC_CLOCK_SOUND, 10, 70, 100, 10
+    AUTOCHECKBOX    "Start with Windows", IDC_AUTOSTART, 10, 90, 100, 10
+    DEFPUSHBUTTON   "OK", IDC_OK, 50, 115, 50, 14
+    PUSHBUTTON      "Cancel", IDC_CANCEL, 110, 115, 50, 14
+END
+
+// About Dialog
+IDD_ABOUT DIALOGEX 0, 0, 180, 100
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "About Pomodoro Timer"
+FONT 8, "MS Shell Dlg"
+BEGIN
+    LTEXT           "Pomodoro Timer v2.0", -1, 10, 10, 160, 10
+    LTEXT           "A simple productivity tool", -1, 10, 25, 160, 10
+    LTEXT           "Created By Ferenc Lutischan", -1, 10, 40, 160, 10
+    LTEXT           "Visit website", IDC_WEBSITE, 10, 55, 160, 10, SS_NOTIFY
+    DEFPUSHBUTTON   "OK", IDOK, 65, 75, 50, 14
+END
+
+IDI_ICON1 ICON "pomodoro-timer.ico"
