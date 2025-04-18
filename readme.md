@@ -10,7 +10,7 @@ A simple, lightweight Pomodoro timer application that runs in the system tray. B
 
 # Downloads
 - [Github releases](https://github.com/lutischan-ferenc/pomodoro-timer-v2/releases)
-- [Majorgeeks](https://www.majorgeeks.com/files/details/pomodoro_timer-v2.html)
+- [Majorgeeks](https://www.majorgeeks.com/files/details/pomodoro_timer.html)
 
 # User Guide
 
@@ -62,7 +62,6 @@ A simple, lightweight Pomodoro timer application that runs in the system tray. B
 
 ### Settings
 Access: Select "Settings" from the right-click menu.
-
   ![Pomodoro settings](images/settings.png "Pomodoro settings")
 
 ### Configuration:
@@ -86,8 +85,9 @@ Access: Select "Settings" from the right-click menu.
 ## Building and Running
 
 ### Windows
-```\mingw32\bin\windres pomodoro-timer.rc -o pomodoro-timer_res.o
-\mingw32\bin\gcc -ffunction-sections -fdata-sections -march=x86-64 -s -o pomodoro-timer pomodoro-timer.c pomodoro-timer_res.o -mwindows -lwinmm -Wl,--gc-sections -static-libgcc
+```
+\mingw32\bin\windres pomodoro-timer.rc -o pomodoro-timer_res.o
+\mingw32\bin\gcc -ffunction-sections -fdata-sections -s -o pomodoro-timer pomodoro-timer.c pomodoro-timer_res.o -mwindows -lwinmm -Wl,--gc-sections -static-libgcc
 ```
 
 ## Configuration
