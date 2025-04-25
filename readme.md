@@ -84,7 +84,7 @@ Access: Select "Settings" from the right-click menu.
 
 ## Building and Running
 
-### Windows
+### In Windows cmd
 ```
 \mingw32\bin\windres pomodoro-timer.rc -o pomodoro-timer_res.o
 \mingw32\bin\gcc -ffunction-sections -fdata-sections -s -o pomodoro-timer pomodoro-timer.c pomodoro-timer_res.o -mwindows -lwinmm -Wl,--gc-sections -static-libgcc

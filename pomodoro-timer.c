@@ -592,6 +592,12 @@ void save_settings() {
 
 // Main entry point
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
+    HANDLE hEvent = CreateEvent(NULL, TRUE, FALSE, _T("PomodoroTimerEvent"));
+    if (GetLastError() == ERROR_ALREADY_EXISTS) {
+        MessageBox(NULL, _T("The program is already running. Exiting."), _T("Warning"), MB_OK | MB_ICONWARNING);
+        return 0;
+    }
+
     // Initialize
     init_system_metrics();
     load_settings();
