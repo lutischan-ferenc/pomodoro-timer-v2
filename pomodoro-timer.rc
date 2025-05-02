@@ -11,6 +11,9 @@
 #define IDC_CLOCK_SOUND 106
 #define IDC_AUTOSTART 107
 #define IDC_WEBSITE 108
+#define IDC_LABEL_POMODORO 201
+#define IDC_LABEL_SHORT_BREAK 202
+#define IDC_LABEL_LONG_BREAK 203
 
 // Sound resources
 CLOCK_WAV WAV "clock.wav"
@@ -22,12 +25,12 @@ STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Pomodoro Settings"
 FONT 8, "MS Shell Dlg"
 BEGIN
-    LTEXT           "Pomodoro (minutes):", -1, 10, 10, 80, 10
-    EDITTEXT        IDC_POMODORO, 90, 10, 40, 14, ES_NUMBER
-    LTEXT           "Short Break (minutes):", -1, 10, 30, 80, 10
-    EDITTEXT        IDC_SHORT_BREAK, 90, 30, 40, 14, ES_NUMBER
-    LTEXT           "Long Break (minutes):", -1, 10, 50, 80, 10
-    EDITTEXT        IDC_LONG_BREAK, 90, 50, 40, 14, ES_NUMBER
+    LTEXT           "Pomodoro (minutes):", IDC_LABEL_POMODORO, 10, 10, 120, 10
+    EDITTEXT        IDC_POMODORO, 130, 10, 40, 14, ES_NUMBER
+    LTEXT           "Short Break (minutes):", IDC_LABEL_SHORT_BREAK, 10, 30, 120, 10
+    EDITTEXT        IDC_SHORT_BREAK, 130, 30, 40, 14, ES_NUMBER
+    LTEXT           "Long Break (minutes):", IDC_LABEL_LONG_BREAK, 10, 50, 120, 10
+    EDITTEXT        IDC_LONG_BREAK, 130, 50, 40, 14, ES_NUMBER
     AUTOCHECKBOX    "Enable clock sound", IDC_CLOCK_SOUND, 10, 70, 100, 10
     AUTOCHECKBOX    "Start with Windows", IDC_AUTOSTART, 10, 90, 100, 10
     DEFPUSHBUTTON   "OK", IDC_OK, 50, 115, 50, 14
