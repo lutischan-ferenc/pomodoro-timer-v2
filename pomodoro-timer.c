@@ -746,7 +746,12 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 } else {
                     if (is_in_pomodoro) {
                         is_in_pomodoro = 0;
-                        start_timer(hwnd, pomodoro_count == 4 ? settings.long_break_duration : settings.short_break_duration);
+                        if (pomodoro_count == 4) {
+                            pomodoro_count = 0; // Reset counter after long break
+                            start_timer(hwnd, settings.long_break_duration);
+                        } else {
+                            start_timer(hwnd, settings.short_break_duration);
+                        }
                     } else {
                         is_in_pomodoro = 1;
                         start_timer(hwnd, settings.pomodoro_duration);
