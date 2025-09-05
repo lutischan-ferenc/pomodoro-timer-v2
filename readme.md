@@ -1,6 +1,9 @@
 # Pomodoro Timer
 A simple, lightweight Pomodoro timer application that runs in the system tray. Built with MingW, it helps you manage your work and break sessions efficiently using the Pomodoro Technique.
 
+
+![Pomodoro Right-Click Menu](images/right-click-menu.png "Right-Click Menu")
+
 [By me a coffee](https://buymeacoffee.com/lutischanf)
 
 ## Features
@@ -25,8 +28,6 @@ A simple, lightweight Pomodoro timer application that runs in the system tray. B
 - The sequence alternates between Pomodoro and Break sessions automatically.
 
 ### Right-Click Menu
-
-![Pomodoro Right-Click Menu](images/right-click-menu.png "Right-Click Menu")
 
 - Right Click on System Tray Icon: Opens a context menu with the following options:
 - Pomodoro Timer v1.1: Opens the GitHub repository in your default browser.
