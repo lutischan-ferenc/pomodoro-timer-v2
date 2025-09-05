@@ -1,6 +1,8 @@
 # Pomodoro Timer
 A simple, lightweight Pomodoro timer application that runs in the system tray. Built with MingW, it helps you manage your work and break sessions efficiently using the Pomodoro Technique.
 
+[By me a coffee](https://buymeacoffee.com/lutischanf)
+
 ## Features
 - System tray integration with a dynamic icon showing the timer status
 - Audio feedback with beeps for countdown and completion
