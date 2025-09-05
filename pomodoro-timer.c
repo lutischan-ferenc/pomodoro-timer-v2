@@ -224,6 +224,7 @@ static int screenWidth = 0, screenHeight = 0;
 #define IDC_CLOCK_SOUND 106
 #define IDC_AUTOSTART 107
 #define IDC_WEBSITE 108
+#define IDC_COFFEE 109
 
 // Function prototypes
 void load_settings();
@@ -446,75 +447,79 @@ void play_resource_sound(const char* resourceName) {
 // Timer thread function
 DWORD WINAPI timer_thread(LPVOID lpParam) {
     static int is_sound_playing = 0;
-    ULONGLONG next_tick = GetTickCount(); // Get initial timestamp
+
+    if (settings.enable_clock_sound && !is_sound_playing) {
+        HRSRC hRes = FindResourceA(NULL, "CLOCK_WAV", "WAV");
+        if (hRes) {
+            HGLOBAL hData = LoadResource(NULL, hRes);
+            if (hData) {
+                LPVOID pData = LockResource(hData);
+                PlaySoundA((LPCSTR)pData, NULL, SND_MEMORY | SND_ASYNC | SND_LOOP);
+                is_sound_playing = 1;
+                UnlockResource(hData);
+            }
+        }
+    }
+
+    ULONGLONG last_tick = GetTickCount();
+    int last_shown_seconds = -1;
+    HWND hwnd = (HWND)lpParam;
 
     while (is_running) {
-        // Handle clock sound
-        if (settings.enable_clock_sound && !is_sound_playing) {
-            HRSRC hRes = FindResourceA(NULL, "CLOCK_WAV", "WAV");
-            if (hRes) {
-                HGLOBAL hData = LoadResource(NULL, hRes);
-                if (hData) {
-                    LPVOID pData = LockResource(hData);
-                    PlaySoundA((LPCSTR)pData, NULL, SND_MEMORY | SND_ASYNC | SND_LOOP);
-                    is_sound_playing = 1;
-                    UnlockResource(hData);
-                }
+        ULONGLONG now = GetTickCount();
+        ULONGLONG elapsed_ms = now - last_tick;
+
+        if (elapsed_ms >= 1000) {
+            int elapsed_sec = (int)(elapsed_ms / 1000);
+            remaining_seconds -= elapsed_sec;
+            last_tick += (ULONGLONG)elapsed_sec * 1000;
+
+            if (remaining_seconds < 0) remaining_seconds = 0;
+
+            if (remaining_seconds > 0 && remaining_seconds <= 10 && settings.enable_clock_sound) {
+                Beep(440, 100);
             }
-        } else if (!settings.enable_clock_sound && is_sound_playing) {
-            PlaySoundA(NULL, NULL, 0);
-            is_sound_playing = 0;
+
+            if (remaining_seconds != last_shown_seconds) {
+                wchar_t display_text[16];
+                if (remaining_seconds < 60) {
+                    _itow(remaining_seconds, display_text, 10);
+                } else {
+                    _itow(remaining_seconds / 60, display_text, 10);
+                }
+                update_tray_icon(hwnd, display_text, pomodoro_count, remaining_seconds);
+                last_shown_seconds = remaining_seconds;
+            }
         }
 
-        // Play countdown sound in last 10 seconds
-        if (remaining_seconds < 11 && settings.enable_clock_sound) {
-            Beep(440, 100); // 400 Hz frequency, 100 ms duration
-        }
-
-        // Timer finished
         if (remaining_seconds <= 0) {
             is_running = 0;
-            PlaySoundA(NULL, NULL, 0);
-            is_sound_playing = 0;
 
-            // Update pomodoro counter (max 4)
+            if (is_sound_playing) {
+                PlaySoundA(NULL, NULL, 0);
+                is_sound_playing = 0;
+            }
+
             if (is_in_pomodoro) {
                 pomodoro_count++;
                 if (pomodoro_count > 4) pomodoro_count = 1;
             }
 
-            update_tray_icon((HWND)lpParam, L"\u25BA", pomodoro_count, 0);
+            update_tray_icon(hwnd, L"\u25BA", pomodoro_count, 0);
             play_resource_sound("DING_WAV");
             return 0;
         }
 
-        remaining_seconds--;
+        ULONGLONG next_boundary = last_tick + 1000;
+        now = GetTickCount();
+        long sleep_ms = (long)(next_boundary - now);
 
-        // Display minutes or seconds depending on time left
-        wchar_t display_text[16];
-        if (remaining_seconds < 60) {
-            _itow(remaining_seconds, display_text, 10);
-        } else {
-            _itow(remaining_seconds / 60, display_text, 10);
-        }
+        if (sleep_ms < 1) sleep_ms = 1;
+        if (sleep_ms > 50) sleep_ms = 50;
 
-        update_tray_icon((HWND)lpParam, display_text, pomodoro_count, remaining_seconds);
-
-        // Calculate time until next second
-        next_tick += 1000; // Target next tick (1 second later)
-        ULONGLONG current_tick = GetTickCount();
-        int sleep_ms = (int)(next_tick - current_tick);
-
-        // Ensure non-negative sleep and avoid excessive drift
-        if (sleep_ms > 0 && sleep_ms <= 1000) {
-            Sleep(sleep_ms);
-        } else if (sleep_ms <= 0) {
-            // If we're behind schedule, adjust next_tick to avoid runaway drift
-            next_tick = current_tick + 1000;
-        }
+        Sleep(sleep_ms);
     }
 
-    // Ensure sound is stopped when timer stops
     if (is_sound_playing) {
         PlaySoundA(NULL, NULL, 0);
         is_sound_playing = 0;
@@ -670,6 +675,7 @@ INT_PTR CALLBACK AboutDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lPa
             lf.lfUnderline = TRUE;
             hLinkFont = CreateFontIndirectW(&lf);
             SendDlgItemMessageW(hwndDlg, IDC_WEBSITE, WM_SETFONT, (WPARAM)hLinkFont, TRUE);
+            SendDlgItemMessageW(hwndDlg, IDC_COFFEE, WM_SETFONT, (WPARAM)hLinkFont, TRUE);
 
             // Set link text
             SetDlgItemTextW(hwndDlg, IDC_WEBSITE, L"Visit our website");
@@ -689,7 +695,7 @@ INT_PTR CALLBACK AboutDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lPa
         }
         case WM_CTLCOLORSTATIC: {
             HWND hwndStatic = (HWND)lParam;
-            if (GetDlgCtrlID(hwndStatic) == IDC_WEBSITE) {
+            if (GetDlgCtrlID(hwndStatic) == IDC_WEBSITE || GetDlgCtrlID(hwndStatic) == IDC_COFFEE) {
                 HDC hdc = (HDC)wParam;
                 SetTextColor(hdc, RGB(0, 0, 255));
                 SetBkMode(hdc, TRANSPARENT);
@@ -700,6 +706,10 @@ INT_PTR CALLBACK AboutDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lPa
         case WM_COMMAND:
             if (LOWORD(wParam) == IDC_WEBSITE && HIWORD(wParam) == STN_CLICKED) {
                 ShellExecuteW(NULL, L"open", L"https://github.com/lutischan-ferenc/pomodoro-timer-v2", NULL, NULL, SW_SHOWNORMAL);
+                return TRUE;
+            }
+            if (LOWORD(wParam) == IDC_COFFEE && HIWORD(wParam) == STN_CLICKED) {
+                ShellExecuteW(NULL, L"open", L"https://coff.ee/lutischanf", NULL, NULL, SW_SHOWNORMAL);
                 return TRUE;
             }
             if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL) {
