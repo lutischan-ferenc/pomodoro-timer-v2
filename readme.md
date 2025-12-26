@@ -32,6 +32,7 @@ A simple, lightweight Pomodoro timer application that runs in the system tray. B
 - Start Break: Directly starts a short break (stops any running timer).
 - Start Long Break: Directly starts a long break (stops any running timer).
 - Start on System Startup (only on Windows)
+- Show Completion Dialog (when a timer completes)
 - Clock sound (play Clock effect on Pomodoro)
 - Settings: Configure timer durations.
 - Exit: Closes the application.
@@ -60,6 +61,10 @@ A simple, lightweight Pomodoro timer application that runs in the system tray. B
 - A beep sounds during the last 10 seconds of a timer.
 - A final beep plays when a session completes.
 
+### Completion Dialog:
+- Show a dialog when the timer finishes (can be disabled in menu)
+  ![Completion dialog](images/completion-dialog.png "Completion dialog")
+ 
 ### Settings
 Access: Select "Settings" from the right-click menu.
   ![Pomodoro settings](images/settings.png "Pomodoro settings")

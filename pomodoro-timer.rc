@@ -44,7 +44,7 @@ STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "About Pomodoro Timer"
 FONT 8, "MS Shell Dlg"
 BEGIN
-    LTEXT           "Pomodoro Timer v2.2.0", -1, 10, 10, 160, 10
+    LTEXT           "Pomodoro Timer v2.3.0", -1, 10, 10, 160, 10
     LTEXT           "A simple productivity tool", -1, 10, 25, 160, 10
     LTEXT           "Created By Ferenc Lutischan", -1, 10, 40, 160, 10
     LTEXT           "Visit website", IDC_WEBSITE, 10, 55, 160, 10, SS_NOTIFY

@@ -5,6 +5,7 @@
 #include <shellapi.h>
 #include <stdio.h>
 #include <string.h>
+#include <wchar.h>
 #include <mmsystem.h>
 #include <tchar.h>
 
@@ -16,6 +17,10 @@
 #define ID_MENU_LANG_ES 306
 #define ID_MENU_LANG_FR 307
 #define ID_MENU_LANG_RU 308
+#define TOAST_WINDOW_CLASS L"PomodoroToastClass"
+#define WM_TOAST_NOTIFY (WM_APP + 100)
+#define ID_TOAST_ACTION 2001
+#define ID_TOAST_CLOSE 2002
 
 // Structure for localized strings
 typedef struct {
@@ -24,6 +29,7 @@ typedef struct {
     WCHAR menu_start_long_break[64];
     WCHAR menu_clock_sound[64];
     WCHAR menu_autostart[64];
+    WCHAR menu_show_dialog[64];
     WCHAR menu_settings[64];
     WCHAR menu_language[64];
     WCHAR menu_about[64];
@@ -37,6 +43,9 @@ typedef struct {
     WCHAR settings_enable_sound[64];
     WCHAR settings_autostart[64];
     WCHAR error_invalid_time[128];
+    WCHAR notify_pomodoro_complete[128];
+    WCHAR notify_break_complete[128];
+    WCHAR notify_long_break_complete[128];
 } LANG;
 
 // Language definitions
@@ -46,6 +55,7 @@ static LANG lang_en = {
     L"Start Long Break",
     L"Clock Sound",
     L"Start on System Startup",
+    L"Show Completion Dialog",
     L"Settings",
     L"Language",
     L"About",
@@ -58,7 +68,10 @@ static LANG lang_en = {
     L"Long break duration (minutes):",
     L"Enable clock sound",
     L"Start on system startup",
-    L"Invalid time values! Must be positive and reasonable."
+    L"Invalid time values! Must be positive and reasonable.",
+    L"Pomodoro Complete!",
+    L"Break Complete!",
+    L"Long Break Complete!"
 };
 
 static LANG lang_hu = {
@@ -67,6 +80,7 @@ static LANG lang_hu = {
     L"Hosszú szünet indítása",
     L"Óra hang",
     L"Indítás rendszerindításkor",
+    L"Befejezési ablak megjelenítése",
     L"Beállítások",
     L"Nyelv",
     L"Névjegy",
@@ -79,7 +93,10 @@ static LANG lang_hu = {
     L"Hosszú szünet időtartama (perc):",
     L"Óra hang engedélyezése",
     L"Indítás rendszerindításkor",
-    L"Érvénytelen időértékek! Pozitívnak és ésszerűnek kell lenniük."
+    L"Érvénytelen időértékek! Pozitívnak és ésszerűnek kell lenniük.",
+    L"Pomodoro kész!",
+    L"Szünet kész!",
+    L"Hosszú szünet kész!"
 };
 
 static LANG lang_de = {
@@ -88,6 +105,7 @@ static LANG lang_de = {
     L"Lange Pause starten",
     L"Uhrenton",
     L"Beim Systemstart starten",
+    L"Abschlussdialog anzeigen",
     L"Einstellungen",
     L"Sprache",
     L"Über",
@@ -100,7 +118,10 @@ static LANG lang_de = {
     L"Lange Pausendauer (Minuten):",
     L"Uhrenton aktivieren",
     L"Beim Systemstart starten",
-    L"Ungültige Zeitwerte! Müssen positiv und angemessen sein."
+    L"Ungültige Zeitwerte! Müssen positiv und angemessen sein.",
+    L"Pomodoro abgeschlossen!",
+    L"Pause abgeschlossen!",
+    L"Lange Pause abgeschlossen!"
 };
 
 static LANG lang_it = {
@@ -109,6 +130,7 @@ static LANG lang_it = {
     L"Avvia Pausa Lunga",
     L"Suono Orologio",
     L"Avvia all'Avvio del Sistema",
+    L"Mostra dialogo completamento",
     L"Impostazioni",
     L"Lingua",
     L"Info",
@@ -121,7 +143,10 @@ static LANG lang_it = {
     L"Durata pausa lunga (minuti):",
     L"Abilita suono orologio",
     L"Avvia all'avvio del sistema",
-    L"Valori temporali non validi! Devono essere positivi e ragionevoli."
+    L"Valori temporali non validi! Devono essere positivi e ragionevoli.",
+    L"Pomodoro Completato!",
+    L"Pausa Completata!",
+    L"Pausa Lunga Completata!"
 };
 
 static LANG lang_es = {
@@ -130,6 +155,7 @@ static LANG lang_es = {
     L"Iniciar Descanso Largo",
     L"Sonido del Reloj",
     L"Iniciar con el Sistema",
+    L"Mostrar diálogo finalización",
     L"Configuración",
     L"Idioma",
     L"Acerca de",
@@ -142,7 +168,10 @@ static LANG lang_es = {
     L"Duración del descanso largo (minutos):",
     L"Habilitar sonido del reloj",
     L"Iniciar con el sistema",
-    L"¡Valores de tiempo inválidos! Deben ser positivos y razonables."
+    L"¡Valores de tiempo inválidos! Deben ser positivos y razonables.",
+    L"¡Pomodoro completado!",
+    L"¡Descanso completado!",
+    L"¡Descanso largo completado!"
 };
 
 static LANG lang_fr = {
@@ -151,6 +180,7 @@ static LANG lang_fr = {
     L"Démarrer Pause Longue",
     L"Son de l'Horloge",
     L"Démarrer avec le Système",
+    L"Afficher dialogue de fin",
     L"Paramètres",
     L"Langue",
     L"À propos",
@@ -163,7 +193,10 @@ static LANG lang_fr = {
     L"Durée pause longue (minutes):",
     L"Activer le son de l'horloge",
     L"Démarrer avec le système",
-    L"Valeurs de temps invalides! Doivent être positives et raisonnables."
+    L"Valeurs de temps invalides! Doivent être positives et raisonnables.",
+    L"Pomodoro Terminé!",
+    L"Pause Terminée!",
+    L"Pause Longue Terminée!"
 };
 
 static LANG lang_ru = {
@@ -172,6 +205,7 @@ static LANG lang_ru = {
     L"Запустить Длинный Перерыв",
     L"Звук Часов",
     L"Запускать при Старте Системы",
+    L"Показывать диалог завершения",
     L"Настройки",
     L"Язык",
     L"О программе",
@@ -184,7 +218,10 @@ static LANG lang_ru = {
     L"Длительность длинного перерыва (минуты):",
     L"Включить звук часов",
     L"Запускать при старте системы",
-    L"Недопустимые значения времени! Должны быть положительными и разумными."
+    L"Недопустимые значения времени! Должны быть положительными и разумными.",
+    L"Помодоро завершено!",
+    L"Перерыв завершен!",
+    L"Длинный перерыв завершен!"
 };
 
 static LANG *g_lang = &lang_en;
@@ -197,10 +234,11 @@ typedef struct {
     int short_break_duration;
     int long_break_duration;
     int enable_clock_sound;
+    int show_completion_dialog;
 } TimerSettings;
 
 // Global variables
-TimerSettings settings = {25, 5, 15, 1};
+TimerSettings settings = {25, 5, 15, 1, 1};
 int pomodoro_count = 0;
 int is_running = 0;
 int is_in_pomodoro = 0;
@@ -212,6 +250,12 @@ static HICON last_icon = NULL;
 static wchar_t last_text[16] = {0};
 static int last_dots = -1;
 static int screenWidth = 0, screenHeight = 0;
+static HWND g_hToastWnd = NULL;
+static HWND g_main_hwnd = NULL; // main invisible window handle
+static int toast_is_pomodoro = 0;
+static int toast_is_long_break = 0;
+static HWND g_hToastButton = NULL;
+static HWND g_hToastCloseButton = NULL;
 
 // Resource IDs
 #define IDD_SETTINGS 100
@@ -238,6 +282,7 @@ INT_PTR CALLBACK SettingsDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM 
 INT_PTR CALLBACK AboutDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 void ShowSettingsDialog(HWND hwndParent);
 void ShowAboutDialog(HWND hwndParent);
+void ShowCompletionNotification(HWND hwnd, int is_pomodoro_complete, int is_long_break);
 
 // Initialize system metrics for dialog positioning
 void init_system_metrics() {
@@ -299,6 +344,7 @@ void RefreshMenuText(void) {
     ModifyMenu(g_hMenu, 3, MF_BYCOMMAND | MF_STRING, 3, g_lang->menu_start_long_break);
     ModifyMenu(g_hMenu, 4, MF_BYCOMMAND | MF_STRING | (settings.enable_clock_sound ? MF_CHECKED : 0), 4, g_lang->menu_clock_sound);
     ModifyMenu(g_hMenu, 5, MF_BYCOMMAND | MF_STRING | (autostart_enabled ? MF_CHECKED : 0), 5, g_lang->menu_autostart);
+    ModifyMenu(g_hMenu, 9, MF_BYCOMMAND | MF_STRING | (settings.show_completion_dialog ? MF_CHECKED : 0), 9, g_lang->menu_show_dialog);
     ModifyMenu(g_hMenu, 6, MF_BYCOMMAND | MF_STRING, 6, g_lang->menu_settings);
     ModifyMenu(g_hMenu, 7, MF_BYCOMMAND | MF_STRING, 7, g_lang->menu_about);
     ModifyMenu(g_hMenu, 8, MF_BYCOMMAND | MF_STRING, 8, g_lang->menu_exit);
@@ -500,13 +546,25 @@ DWORD WINAPI timer_thread(LPVOID lpParam) {
                 is_sound_playing = 0;
             }
 
+            int was_pomodoro = is_in_pomodoro;
+            int is_long_break = 0;
+
             if (is_in_pomodoro) {
-                pomodoro_count++;
-                if (pomodoro_count > 4) pomodoro_count = 1;
+                // increment completed pomodoro count up to 4
+                if (pomodoro_count < 4) pomodoro_count++;
+                if (pomodoro_count == 4) {
+                    is_long_break = 1; // schedule a long break
+                }
             }
 
             update_tray_icon(hwnd, L"\u25BA", pomodoro_count, 0);
             play_resource_sound("DING_WAV");
+
+            // Post a message to the main thread to show completion notification (create toast on GUI thread)
+            if (settings.show_completion_dialog) {
+                PostMessage(hwnd, WM_TOAST_NOTIFY, (WPARAM)was_pomodoro, (LPARAM)is_long_break);
+            }
+
             return 0;
         }
 
@@ -744,6 +802,245 @@ INT_PTR CALLBACK AboutDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lPa
     return FALSE;
 }
 
+// Toast window procedure
+LRESULT CALLBACK ToastWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+    switch (msg) {
+        case WM_CREATE: {
+            // No auto-close timer: keep toast until user acts or clicks background
+            return 0;
+        }
+        case WM_COMMAND:
+            if (LOWORD(wParam) == ID_TOAST_ACTION && HIWORD(wParam) == BN_CLICKED) {
+                // Button clicked: start the appropriate timer on the main window
+                if (toast_is_pomodoro) {
+                    // start break
+                    is_in_pomodoro = 0; // now we're in break
+                    // treat as long break if either the toast indicated it or the counter reached 4
+                    if (toast_is_long_break || pomodoro_count >= 4) {
+                        // do not reset here; keep the completed count until a new pomodoro starts
+                        start_timer(g_main_hwnd, settings.long_break_duration);
+                     } else {
+                         start_timer(g_main_hwnd, settings.short_break_duration);
+                     }
+                 } else {
+                     // start pomodoro
+                     is_in_pomodoro = 1; // now we're in pomodoro
+                     // starting a new pomodoro -> reset completed counter only if cycle complete
+                     if (pomodoro_count >= 4) pomodoro_count = 0;
+                     start_timer(g_main_hwnd, settings.pomodoro_duration);
+                 }
+                 DestroyWindow(hwnd);
+             } else if (LOWORD(wParam) == ID_TOAST_CLOSE && HIWORD(wParam) == BN_CLICKED) {
+                 // Close button clicked
+                 DestroyWindow(hwnd);
+             }
+             return 0;
+        case WM_DESTROY:
+            g_hToastWnd = NULL;
+            g_hToastButton = NULL;
+            g_hToastCloseButton = NULL;
+            return 0;
+        case WM_LBUTTONDOWN:
+            DestroyWindow(hwnd);
+            return 0;
+        case WM_PAINT: {
+            PAINTSTRUCT ps;
+            HDC hdc = BeginPaint(hwnd, &ps);
+
+            // Draw reddish background (use same red as the tray icon)
+            RECT rect;
+            GetClientRect(hwnd, &rect);
+            HBRUSH hBrush = CreateSolidBrush(RGB(139, 0, 0));
+            FillRect(hdc, &rect, hBrush);
+            DeleteObject(hBrush);
+
+            // Draw subtle border (darker)
+            HPEN hPen = CreatePen(PS_SOLID, 2, RGB(100, 0, 0));
+            HPEN hOldPen = (HPEN)SelectObject(hdc, hPen);
+            HBRUSH hOldBrush = (HBRUSH)SelectObject(hdc, GetStockObject(NULL_BRUSH));
+            Rectangle(hdc, 0, 0, rect.right, rect.bottom);
+            SelectObject(hdc, hOldBrush);
+            SelectObject(hdc, hOldPen);
+            DeleteObject(hPen);
+
+            // Draw progress dots (4) above the action button
+            int totalDots = 4;
+            int dotR = 6; // radius
+            int spacing = 12;
+            int dotDiameter = dotR * 2;
+            int totalWidth = totalDots * dotDiameter + (totalDots - 1) * spacing;
+            int startX = (rect.right - totalWidth) / 2;
+            int dotsY = rect.bottom - 28 - 12 - 16; // above button area (btnH=28, gap)
+
+            // Determine how many dots should be green: show up to 4 completed pomodoros
+            int greenCount = pomodoro_count;
+            if (greenCount < 0) greenCount = 0;
+            if (greenCount > 4) greenCount = greenCount % 4; // fallback, but normally 0..4
+
+            for (int i = 0; i < totalDots; i++) {
+                int cx = startX + i * (dotDiameter + spacing);
+                int left = cx;
+                int top = dotsY - dotR;
+                int right = cx + dotDiameter;
+                int bottom = dotsY + dotR;
+
+                HBRUSH fill = CreateSolidBrush((i < greenCount) ? RGB(144, 238, 144) : RGB(0, 0, 0));
+                HBRUSH old = (HBRUSH)SelectObject(hdc, fill);
+                Ellipse(hdc, left, top, right, bottom);
+                SelectObject(hdc, old);
+                DeleteObject(fill);
+            }
+
+            // Draw message text in white
+            SetBkMode(hdc, TRANSPARENT);
+            SetTextColor(hdc, RGB(255, 255, 255));
+            HFONT hFont = CreateFontW(14, 0, 0, 0, FW_SEMIBOLD, FALSE, FALSE, FALSE,
+                                     DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+                                     DEFAULT_QUALITY, DEFAULT_PITCH, L"Segoe UI");
+            HFONT hOldFont = (HFONT)SelectObject(hdc, hFont);
+
+            RECT textRect = {15, 12, rect.right - 15, rect.bottom - 50};
+            const wchar_t* message = (const wchar_t*)GetWindowLongPtrW(hwnd, GWLP_USERDATA);
+            if (message) {
+                DrawTextW(hdc, message, -1, &textRect, DT_LEFT | DT_WORDBREAK);
+            }
+
+            SelectObject(hdc, hOldFont);
+            DeleteObject(hFont);
+
+            EndPaint(hwnd, &ps);
+            return 0;
+        }
+        default:
+            return DefWindowProcW(hwnd, msg, wParam, lParam);
+    }
+}
+
+// Register toast window class
+void RegisterToastWindowClass(void) {
+    static BOOL registered = FALSE;
+    if (registered) return;
+
+    WNDCLASSW wc = {0};
+    wc.lpfnWndProc = ToastWndProc;
+    wc.hInstance = GetModuleHandle(NULL);
+    wc.lpszClassName = TOAST_WINDOW_CLASS;
+    wc.style = CS_HREDRAW | CS_VREDRAW;
+    wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+    wc.hCursor = LoadCursorW(NULL, IDC_ARROW);
+    RegisterClassW(&wc);
+
+    registered = TRUE;
+}
+
+// Show completion notification as toast
+void ShowCompletionNotification(HWND hwnd, int is_pomodoro_complete, int is_long_break) {
+    const wchar_t* message;
+
+    if (is_pomodoro_complete) {
+        message = g_lang->notify_pomodoro_complete;
+    } else if (is_long_break) {
+        message = g_lang->notify_long_break_complete;
+    } else {
+        message = g_lang->notify_break_complete;
+    }
+
+    // Close previous toast if exists
+    if (g_hToastWnd) {
+        DestroyWindow(g_hToastWnd);
+        g_hToastWnd = NULL;
+    }
+
+    // Register toast window class if not already done
+    RegisterToastWindowClass();
+
+    // Get taskbar position
+    RECT taskbarRect = {0};
+    HWND taskbarWnd = FindWindowW(L"Shell_TrayWnd", NULL);
+    if (taskbarWnd) {
+        GetWindowRect(taskbarWnd, &taskbarRect);
+    }
+
+    // Calculate toast position (above taskbar, right side)
+    int toastWidth = 320; // smaller width
+    int toastHeight = 100; // smaller height to match button
+    int screenWidth = GetSystemMetrics(SM_CXSCREEN);
+    int screenHeight = GetSystemMetrics(SM_CYSCREEN);
+
+    int xPos = screenWidth - toastWidth - 20;  // 20 pixels from right edge
+    int yPos = taskbarRect.top - toastHeight - 20;  // 20 pixels above taskbar
+
+    // Fallback if taskbar position not found
+    if (yPos < 0) {
+        yPos = screenHeight - toastHeight - 100;
+    }
+
+    // Create toast window with message in window title (for debugging)
+    // Store message pointer for use in WM_PAINT
+    static wchar_t toastMessage[256] = {0};
+    int msgLen = wcslen(message);
+    if (msgLen > 255) msgLen = 255;
+    wcsncpy(toastMessage, message, msgLen);
+    toastMessage[msgLen] = L'\0';
+
+    g_hToastWnd = CreateWindowExW(
+        WS_EX_TOPMOST | WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW,
+        TOAST_WINDOW_CLASS,
+        L"Pomodoro Timer",
+        WS_POPUP,
+        xPos, yPos, toastWidth, toastHeight,
+        NULL, NULL, GetModuleHandle(NULL), NULL
+    );
+
+    if (g_hToastWnd) {
+        // store toast state
+        toast_is_pomodoro = is_pomodoro_complete;
+        toast_is_long_break = is_long_break;
+
+        // Store message in window user data for access in WM_PAINT
+        SetWindowLongPtrW(g_hToastWnd, GWLP_USERDATA, (LONG_PTR)toastMessage);
+
+        // Create action button (centered at bottom)
+        int btnW = 160, btnH = 28;
+        int btnX = (toastWidth - btnW) / 2;
+        int btnY = toastHeight - btnH - 12;
+        const wchar_t* btnText = is_pomodoro_complete ? g_lang->menu_start_break : g_lang->menu_start_pomodoro;
+        g_hToastButton = CreateWindowW(L"BUTTON", btnText,
+            WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
+            btnX, btnY, btnW, btnH,
+            g_hToastWnd, (HMENU)ID_TOAST_ACTION, GetModuleHandle(NULL), NULL);
+        // Ensure button uses default GUI font
+        SendMessageW(g_hToastButton, WM_SETFONT, (WPARAM)GetStockObject(DEFAULT_GUI_FONT), TRUE);
+        // Explicitly set button text (force correct label)
+        SetWindowTextW(g_hToastButton, btnText);
+
+        // Force repaint to update dots and button
+        InvalidateRect(g_hToastWnd, NULL, TRUE);
+        UpdateWindow(g_hToastWnd);
+
+        // Create small close button in top-right corner
+        int closeW = 22, closeH = 22;
+        int closeX = toastWidth - closeW - 8;
+        int closeY = 8;
+        g_hToastCloseButton = CreateWindowW(L"BUTTON", L"✕",
+            WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON | BS_CENTER,
+            closeX, closeY, closeW, closeH,
+            g_hToastWnd, (HMENU)ID_TOAST_CLOSE, GetModuleHandle(NULL), NULL);
+        SendMessageW(g_hToastCloseButton, WM_SETFONT, (WPARAM)GetStockObject(DEFAULT_GUI_FONT), TRUE);
+
+        // Show window and bring to foreground
+        ShowWindow(g_hToastWnd, SW_SHOW);
+        UpdateWindow(g_hToastWnd);
+        SetWindowPos(g_hToastWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW);
+
+        // Try to bring to foreground
+        AllowSetForegroundWindow(GetCurrentProcessId());
+        SetForegroundWindow(g_hToastWnd);
+    } else {
+        OutputDebugStringW(L"ShowCompletionNotification: failed to create toast window\n");
+    }
+}
+
 // Main window procedure
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     switch (msg) {
@@ -757,13 +1054,15 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                     if (is_in_pomodoro) {
                         is_in_pomodoro = 0;
                         if (pomodoro_count == 4) {
-                            pomodoro_count = 0; // Reset counter after long break
-                            start_timer(hwnd, settings.long_break_duration);
+                            // do not reset here; keep pomodoro_count=4 to show 4th dot until a new pomodoro starts
+                             start_timer(hwnd, settings.long_break_duration);
                         } else {
                             start_timer(hwnd, settings.short_break_duration);
                         }
                     } else {
                         is_in_pomodoro = 1;
+                        // starting a new pomodoro -> reset completed counter only if cycle complete
+                        if (pomodoro_count >= 4) pomodoro_count = 0;
                         start_timer(hwnd, settings.pomodoro_duration);
                     }
                 }
@@ -777,6 +1076,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 AppendMenu(hMenu, MF_SEPARATOR, 0, NULL);
                 AppendMenu(hMenu, MF_STRING | (settings.enable_clock_sound ? MF_CHECKED : 0), 4, g_lang->menu_clock_sound);
                 AppendMenu(hMenu, MF_STRING | (autostart_enabled ? MF_CHECKED : 0), 5, g_lang->menu_autostart);
+                AppendMenu(hMenu, MF_STRING | (settings.show_completion_dialog ? MF_CHECKED : 0), 9, g_lang->menu_show_dialog);
                 AppendMenu(hMenu, MF_SEPARATOR, 0, NULL);
                 AppendMenu(hMenu, MF_STRING, 6, g_lang->menu_settings);
 
@@ -814,6 +1114,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 switch (cmd) {
                     case 1: // Start Pomodoro
                         is_in_pomodoro = 1;
+                        // user started a new pomodoro manually -> reset completed counter only if cycle complete
+                        if (pomodoro_count >= 4) pomodoro_count = 0;
                         start_timer(hwnd, settings.pomodoro_duration);
                         break;
                     case 2: // Start Break
@@ -831,6 +1133,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                     case 5: // Toggle Autostart
                         autostart_enabled = !autostart_enabled;
                         set_autostart(autostart_enabled);
+                        break;
+                    case 9: // Toggle Completion Dialog
+                        settings.show_completion_dialog = !settings.show_completion_dialog;
+                        save_settings();
                         break;
                     case 6: // Settings
                         ShowSettingsDialog(hwnd);
@@ -885,6 +1191,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             Shell_NotifyIcon(NIM_DELETE, &nid);
             PostQuitMessage(0);
             break;
+        case WM_TOAST_NOTIFY:
+            // wParam = was_pomodoro (0/1), lParam = is_long_break (0/1)
+            ShowCompletionNotification(hwnd, (int)wParam, (int)lParam);
+            return 0;
         default:
             return DefWindowProc(hwnd, msg, wParam, lParam);
     }
@@ -897,13 +1207,20 @@ void load_settings() {
     if (fp) {
         char buf[256] = {0};
         if (fread(buf, 1, sizeof(buf) - 1, fp) > 0) {
-            if (sscanf(buf, "{\"pomodoro_duration\":%d,\"short_break_duration\":%d,\"long_break_duration\":%d,\"enable_clock_sound\":%d}",
-                       &settings.pomodoro_duration, &settings.short_break_duration, &settings.long_break_duration, &settings.enable_clock_sound) != 4) {
-                // Use default values if parsing fails
-                settings.pomodoro_duration = 25;
-                settings.short_break_duration = 5;
-                settings.long_break_duration = 15;
-                settings.enable_clock_sound = 1;
+            if (sscanf(buf, "{\"pomodoro_duration\":%d,\"short_break_duration\":%d,\"long_break_duration\":%d,\"enable_clock_sound\":%d,\"show_completion_dialog\":%d}",
+                       &settings.pomodoro_duration, &settings.short_break_duration, &settings.long_break_duration, &settings.enable_clock_sound, &settings.show_completion_dialog) != 5) {
+                // Try old format
+                if (sscanf(buf, "{\"pomodoro_duration\":%d,\"short_break_duration\":%d,\"long_break_duration\":%d,\"enable_clock_sound\":%d}",
+                           &settings.pomodoro_duration, &settings.short_break_duration, &settings.long_break_duration, &settings.enable_clock_sound) == 4) {
+                    settings.show_completion_dialog = 1; // Default for old format
+                } else {
+                    // Use default values if parsing fails
+                    settings.pomodoro_duration = 25;
+                    settings.short_break_duration = 5;
+                    settings.long_break_duration = 15;
+                    settings.enable_clock_sound = 1;
+                    settings.show_completion_dialog = 1;
+                }
             }
         }
         fclose(fp);
@@ -914,8 +1231,8 @@ void load_settings() {
 void save_settings() {
     FILE* fp = fopen("pomodoro_settings.json", "w");
     if (fp) {
-        fprintf(fp, "{\"pomodoro_duration\":%d,\"short_break_duration\":%d,\"long_break_duration\":%d,\"enable_clock_sound\":%d}",
-                settings.pomodoro_duration, settings.short_break_duration, settings.long_break_duration, settings.enable_clock_sound);
+        fprintf(fp, "{\"pomodoro_duration\":%d,\"short_break_duration\":%d,\"long_break_duration\":%d,\"enable_clock_sound\":%d,\"show_completion_dialog\":%d}",
+                settings.pomodoro_duration, settings.short_break_duration, settings.long_break_duration, settings.enable_clock_sound, settings.show_completion_dialog);
         fclose(fp);
     }
 }
@@ -958,6 +1275,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     // Create invisible window
     HWND hwnd = CreateWindowW(L"Pomodoro", L"Pomodoro", 0, 0, 0, 0, 0, NULL, NULL, hInstance, NULL);
+    g_main_hwnd = hwnd;
 
     // Setup tray icon
     nid.cbSize = sizeof(NOTIFYICONDATA);
