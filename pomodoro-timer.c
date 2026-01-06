@@ -870,7 +870,7 @@ LRESULT CALLBACK ToastWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             int dotDiameter = dotR * 2;
             int totalWidth = totalDots * dotDiameter + (totalDots - 1) * spacing;
             int startX = (rect.right - totalWidth) / 2;
-            int dotsY = rect.bottom - 28 - 12 - 16; // above button area (btnH=28, gap)
+            int dotsY = rect.bottom - 40 - 15 - 16; // above button area (btnH=40, gap=15, dots_radius_space=16)
 
             // Determine how many dots should be green: show up to 4 completed pomodoros
             int greenCount = pomodoro_count;
@@ -894,12 +894,12 @@ LRESULT CALLBACK ToastWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             // Draw message text in white
             SetBkMode(hdc, TRANSPARENT);
             SetTextColor(hdc, RGB(255, 255, 255));
-            HFONT hFont = CreateFontW(14, 0, 0, 0, FW_SEMIBOLD, FALSE, FALSE, FALSE,
+            HFONT hFont = CreateFontW(20, 0, 0, 0, FW_SEMIBOLD, FALSE, FALSE, FALSE,
                                      DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
                                      DEFAULT_QUALITY, DEFAULT_PITCH, L"Segoe UI");
             HFONT hOldFont = (HFONT)SelectObject(hdc, hFont);
 
-            RECT textRect = {15, 12, rect.right - 15, rect.bottom - 50};
+            RECT textRect = {15, 15, rect.right - 15, rect.bottom - 80};
             const wchar_t* message = (const wchar_t*)GetWindowLongPtrW(hwnd, GWLP_USERDATA);
             if (message) {
                 DrawTextW(hdc, message, -1, &textRect, DT_LEFT | DT_WORDBREAK);
@@ -962,8 +962,8 @@ void ShowCompletionNotification(HWND hwnd, int is_pomodoro_complete, int is_long
     }
 
     // Calculate toast position (above taskbar, right side)
-    int toastWidth = 320; // smaller width
-    int toastHeight = 100; // smaller height to match button
+    int toastWidth = 300; // smaller width
+    int toastHeight = 150; // smaller height to match button
     int screenWidth = GetSystemMetrics(SM_CXSCREEN);
     int screenHeight = GetSystemMetrics(SM_CYSCREEN);
 
@@ -1001,16 +1001,24 @@ void ShowCompletionNotification(HWND hwnd, int is_pomodoro_complete, int is_long
         SetWindowLongPtrW(g_hToastWnd, GWLP_USERDATA, (LONG_PTR)toastMessage);
 
         // Create action button (centered at bottom)
-        int btnW = 160, btnH = 28;
+        int btnW = 200, btnH = 40;
         int btnX = (toastWidth - btnW) / 2;
-        int btnY = toastHeight - btnH - 12;
+        int btnY = toastHeight - btnH - 15;
         const wchar_t* btnText = is_pomodoro_complete ? g_lang->menu_start_break : g_lang->menu_start_pomodoro;
         g_hToastButton = CreateWindowW(L"BUTTON", btnText,
             WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
             btnX, btnY, btnW, btnH,
             g_hToastWnd, (HMENU)ID_TOAST_ACTION, GetModuleHandle(NULL), NULL);
-        // Ensure button uses default GUI font
-        SendMessageW(g_hToastButton, WM_SETFONT, (WPARAM)GetStockObject(DEFAULT_GUI_FONT), TRUE);
+
+        // Set button font
+        static HFONT hBtnFont = NULL;
+        if (!hBtnFont) {
+            hBtnFont = CreateFontW(17, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE,
+                                     DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+                                     DEFAULT_QUALITY, DEFAULT_PITCH, L"Segoe UI");
+        }
+        SendMessage(g_hToastButton, WM_SETFONT, (WPARAM)hBtnFont, TRUE);
+
         // Explicitly set button text (force correct label)
         SetWindowTextW(g_hToastButton, btnText);
 
