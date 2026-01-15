@@ -69,7 +69,7 @@ A simple, lightweight Pomodoro timer application that runs in the system tray. B
   ![Completion dialog](images/completion-dialog.png "Completion dialog")
  
 ### Settings
-Access: Select "Settings" from the right-click menu.
+- Access: Select "Settings" from the right-click menu.
   ![Pomodoro settings](images/settings.png "Pomodoro settings")
 
 ### Configuration:
