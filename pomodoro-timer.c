@@ -17,10 +17,12 @@
 #define ID_MENU_LANG_ES 306
 #define ID_MENU_LANG_FR 307
 #define ID_MENU_LANG_RU 308
+#define ID_MENU_RESET_COUNT 309
 #define TOAST_WINDOW_CLASS L"PomodoroToastClass"
 #define WM_TOAST_NOTIFY (WM_APP + 100)
 #define ID_TOAST_ACTION 2001
 #define ID_TOAST_CLOSE 2002
+#define ID_TOAST_RESET 2003
 
 // Structure for localized strings
 typedef struct {
@@ -34,6 +36,7 @@ typedef struct {
     WCHAR menu_language[64];
     WCHAR menu_about[64];
     WCHAR menu_exit[64];
+    WCHAR menu_reset_count[64];
     WCHAR tooltip_pomodoro[64];
     WCHAR tooltip_break[64];
     WCHAR settings_title[64];
@@ -60,6 +63,7 @@ static LANG lang_en = {
     L"Language",
     L"About",
     L"Exit",
+    L"Reset Pomodoro Sessions",
     L"Click to start a pomodoro",
     L"Click to start a break",
     L"Pomodoro Settings",
@@ -85,6 +89,7 @@ static LANG lang_hu = {
     L"Nyelv",
     L"Névjegy",
     L"Kilépés",
+    L"Pomodoro körök törlése",
     L"Kattints egy pomodoro indításához",
     L"Kattints egy szünet indításához",
     L"Pomodoro beállítások",
@@ -110,6 +115,7 @@ static LANG lang_de = {
     L"Sprache",
     L"Über",
     L"Beenden",
+    L"Pomodoro-Sitzungen zurücksetzen",
     L"Klicken Sie, um einen Pomodoro zu starten",
     L"Klicken Sie, um eine Pause zu starten",
     L"Pomodoro-Einstellungen",
@@ -135,6 +141,7 @@ static LANG lang_it = {
     L"Lingua",
     L"Info",
     L"Esci",
+    L"Reimposta sessioni Pomodoro",
     L"Clicca per avviare un pomodoro",
     L"Clicca per avviare una pausa",
     L"Impostazioni Pomodoro",
@@ -160,6 +167,7 @@ static LANG lang_es = {
     L"Idioma",
     L"Acerca de",
     L"Salir",
+    L"Reiniciar sesiones Pomodoro",
     L"Clic para iniciar un pomodoro",
     L"Clic para iniciar un descanso",
     L"Configuración de Pomodoro",
@@ -185,6 +193,7 @@ static LANG lang_fr = {
     L"Langue",
     L"À propos",
     L"Quitter",
+    L"Réinitialiser sessions Pomodoro",
     L"Cliquez pour démarrer un pomodoro",
     L"Cliquez pour démarrer une pause",
     L"Paramètres Pomodoro",
@@ -210,6 +219,7 @@ static LANG lang_ru = {
     L"Язык",
     L"О программе",
     L"Выход",
+    L"Сбросить сессии Помодоро",
     L"Нажмите для запуска помодоро",
     L"Нажмите для запуска перерыва",
     L"Настройки Помодоро",
@@ -347,6 +357,7 @@ void RefreshMenuText(void) {
     ModifyMenu(g_hMenu, 9, MF_BYCOMMAND | MF_STRING | (settings.show_completion_dialog ? MF_CHECKED : 0), 9, g_lang->menu_show_dialog);
     ModifyMenu(g_hMenu, 6, MF_BYCOMMAND | MF_STRING, 6, g_lang->menu_settings);
     ModifyMenu(g_hMenu, 7, MF_BYCOMMAND | MF_STRING, 7, g_lang->menu_about);
+    ModifyMenu(g_hMenu, ID_MENU_RESET_COUNT, MF_BYCOMMAND | MF_STRING, ID_MENU_RESET_COUNT, g_lang->menu_reset_count);
     ModifyMenu(g_hMenu, 8, MF_BYCOMMAND | MF_STRING, 8, g_lang->menu_exit);
 
     if (g_hLangMenu) {
@@ -833,6 +844,10 @@ LRESULT CALLBACK ToastWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
              } else if (LOWORD(wParam) == ID_TOAST_CLOSE && HIWORD(wParam) == BN_CLICKED) {
                  // Close button clicked
                  DestroyWindow(hwnd);
+             } else if (LOWORD(wParam) == ID_TOAST_RESET && HIWORD(wParam) == BN_CLICKED) {
+                 pomodoro_count = 0;
+                 InvalidateRect(hwnd, NULL, TRUE);
+                 update_tray_icon(g_main_hwnd, L"\u25BA", pomodoro_count, 0);
              }
              return 0;
         case WM_DESTROY:
@@ -1036,6 +1051,25 @@ void ShowCompletionNotification(HWND hwnd, int is_pomodoro_complete, int is_long
             g_hToastWnd, (HMENU)ID_TOAST_CLOSE, GetModuleHandle(NULL), NULL);
         SendMessageW(g_hToastCloseButton, WM_SETFONT, (WPARAM)GetStockObject(DEFAULT_GUI_FONT), TRUE);
 
+        // Create small reset button next to the dots
+        int totalDots = 4;
+        int dotR = 6;
+        int spacing = 12;
+        int dotDiameter = dotR * 2;
+        int totalWidth = totalDots * dotDiameter + (totalDots - 1) * spacing;
+        int dotsCenterY = toastHeight - 40 - 15 - 16;
+        int dotsStartX = (toastWidth - totalWidth) / 2;
+
+        int resetW = 22, resetH = 22;
+        int resetX = dotsStartX + totalWidth + 15;
+        int resetY = dotsCenterY - (resetH / 2);
+
+        HWND hResetBtn = CreateWindowW(L"BUTTON", L"↺",
+            WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON | BS_CENTER,
+            resetX, resetY, resetW, resetH,
+            g_hToastWnd, (HMENU)ID_TOAST_RESET, GetModuleHandle(NULL), NULL);
+        SendMessageW(hResetBtn, WM_SETFONT, (WPARAM)GetStockObject(DEFAULT_GUI_FONT), TRUE);
+
         // Show window and bring to foreground
         ShowWindow(g_hToastWnd, SW_SHOW);
         UpdateWindow(g_hToastWnd);
@@ -1110,6 +1144,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 
                 AppendMenu(hMenu, MF_SEPARATOR, 0, NULL);
                 AppendMenu(hMenu, MF_STRING, 7, g_lang->menu_about);
+                AppendMenu(hMenu, MF_STRING, ID_MENU_RESET_COUNT, g_lang->menu_reset_count);
                 AppendMenu(hMenu, MF_SEPARATOR, 0, NULL);
                 AppendMenu(hMenu, MF_STRING, 8, g_lang->menu_exit);
 
@@ -1151,6 +1186,20 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                         break;
                     case 7: // About
                         ShowAboutDialog(hwnd);
+                        break;
+                    case ID_MENU_RESET_COUNT:
+                        pomodoro_count = 0;
+                        if (is_running) {
+                             wchar_t display_text[16];
+                             if (remaining_seconds < 60) {
+                                 _itow(remaining_seconds, display_text, 10);
+                             } else {
+                                 _itow(remaining_seconds / 60, display_text, 10);
+                             }
+                             update_tray_icon(hwnd, display_text, pomodoro_count, remaining_seconds);
+                        } else {
+                             update_tray_icon(hwnd, L"\u25BA", pomodoro_count, 0);
+                        }
                         break;
                     case 8: // Exit
                         Shell_NotifyIcon(NIM_DELETE, &nid);
